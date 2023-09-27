@@ -1,21 +1,18 @@
 export default function appSrc(express, bodyParser, createReadStream, crypto, http) {
   const app = express();
 
-  const CORS = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,OPTIONS,DELETE',
-    'Access-Control-Allow-Headers': 'Content-Type, Access-Control-Allow-Headers'
-  };
-
-  app.use(bodyParser.urlencoded({extended: false}));
+  app.use(bodyParser.urlencoded({ extended: false }));
   app.use(bodyParser.json());
 
   app.use((req, res, next) => {
-    res.set({...CORS});
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, OPTIONS, DELETE');
     next();
   });
 
-  app.get('/login/', (req, res) => res.send('zdarya'));
+  app.get('/login/', (req, res) => {
+    res.send('zdarya');
+  });
 
   app.get('/code/', (req, res) => {
     const filePath = import.meta.url.substring(7);
@@ -30,17 +27,27 @@ export default function appSrc(express, bodyParser, createReadStream, crypto, ht
 
   app.all('/req/', (req, res) => {
     const addr = req.query.addr || req.body.addr;
-    
-    if (!addr) return res.send('Specify the "addr" parameter');
+    if (!addr) {
+      return res.send('Specify the "addr" parameter');
+    }
 
-    http.get(addr, res => {
+    http.get(addr, (response) => {
       let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => req.send(data));
-    }).on('error', err => res.send(`ERROR ${err.message}`));
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      response.on('end', () => {
+        res.send(data);
+      });
+    }).on('error', (err) => {
+      res.send('Error: ' + err.message);
+    });
   });
 
-  app.all('*', (req, res) => res.send('zdarya'));
+  app.all('*', (req, res) => {
+    res.send('zdarya');
+  });
 
   return app;
 }
